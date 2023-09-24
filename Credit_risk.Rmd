@@ -1,0 +1,348 @@
+---
+title: "Data Science and Analytics"
+output: html_document
+date: "2023-07-10"
+---
+
+```{r}
+getwd()
+```
+
+```{r}
+setwd("C:/users/jenro/oneDrive/Desktop/ABOSEDE/cover letters/Job Applications/Gen Re")
+```
+
+#import dataset
+```{r}
+dataset<-read.csv("credit_data.csv")
+```
+
+##look at datastructure
+```{r}
+head(dataset)
+```
+```{r}
+str(dataset)
+```
+```{r}
+summary(dataset)
+```
+
+##checking for missing values
+```{r}
+which (is.na(dataset),arr.ind = TRUE)
+columns_with_missing <- colSums(is.na(dataset) | dataset == "")
+columns_with_missing[columns_with_missing > 0]
+```
+
+#Transforming dataset
+
+##replace values
+```{r}
+dataset$credit_risk[dataset$credit_risk==-1]<-1
+dataset$credit_risk[dataset$credit_risk==2]<-0
+summary(dataset$credit_risk)
+```
+```{r}
+## =======Data Cleaning and transformation ========
+## Filter out missing and NA
+library(tidyverse)
+dataset_2 <- dataset %>%
+  filter(age != "NA" | occupation != "") %>%
+  mutate(Account_status_2 = case_when(account_status == "A11" ~ "< 0 €",
+                                      account_status == "A12" ~ "< 200 €",
+                                      account_status == "A13" ~ ">=200 €",
+                                      account_status == "A14" ~ "no checking account")) |>
+  mutate(employment_2 = case_when(employment == "A71" ~ "unemployed",
+                                      employment == "A72" ~ "< 1 year",
+                                      employment == "A73" ~ "< 4 years",
+                                      employment == "A74" ~ "< 7 years",
+                                      employment == "A75" ~ ">= 7 years ")) |>
+  mutate(credit_risk_2 = case_when(credit_risk == 1 ~ "Good",
+                                   credit_risk == 0 ~ "Bad"))
+
+View(dataset_2)
+
+```
+
+```{r}
+## ==== Descriptive Analysis and Visualization =======
+
+# Total Number of Active account
+active_account<- dataset_2 %>%
+  group_by(Account_status_2) %>%
+  count() %>%
+  arrange(desc(n))
+
+
+ggplot(active_account) +
+  geom_col(aes(
+    x = Account_status_2,
+    y = n),
+    fill = "blue",
+    width = 0.8) +
+  labs(
+    title = "Account holders by Numbers",
+    y = "total number of account holders",
+    x = "Account Holders",
+    caption = "Source: Credit Risk Score"
+  ) +
+  theme_minimal()
+
+
+```
+```{r}
+# Total number of Employed 
+dataset_2 %>%
+  group_by(employment_2) %>%
+  count() %>%
+  arrange(desc(n))
+
+# Employment and credit amount
+dataset_2 %>%
+  group_by(employment_2) %>%
+  summarize(total_credit_amount = sum(credit_amount)) %>%
+  arrange(desc(total_credit_amount))
+
+# account status  and credit amount
+dataset_2 %>%
+  group_by(Account_status_2) %>%
+  summarize(total_credit_amount = sum(credit_amount)) %>%
+  arrange(desc(total_credit_amount))
+
+```
+
+#boxplot to compare distributions across different groups or categories
+
+```{r}
+
+boxplot(credit_amount ~ credit_risk, data = dataset_2,
+        main = "Boxplot",                   # Title of the plot
+        xlab = "credit_risk",                     # Label for the x-axis
+        ylab = "credit_amount",                     # Label for the y-axis
+        col = c("lightblue", "lightgreen"),  # Custom box colors
+        border = "darkblue",                 # Color of the box borders
+        notch = TRUE,                       # Add notches for confidence intervals
+        notchwidth = 0.8,                    # Width of the notches
+        medcol = "red",                      # Color of the median line
+        whisklty = 2)                        # Style of the whisker lines palette
+```
+##Interpretations
+
+# The line inside the box represents the median, which is the middle value of the dataset when arranged in ascending order. It divides the data into two equal halves. The median gives an idea of the central tendency of the data.
+
+#The box represents the interquartile range (IQR), which is the range between the first quartile (25th percentile) and the third quartile (75th percentile). It contains the middle 50% of the data. The height of the box indicates the spread or variability of the data.
+
+# The lines extending from the box, known as whiskers, represent the range of the data. By default, they typically extend up to 1.5 times the IQR from the upper and lower quartiles. Observations beyond the whiskers are considered potential outliers.
+
+#Individual data points that lie beyond the whiskers are shown as individual points or small circles. They are considered extreme values that may indicate unusual or extreme observations in the data.
+
+#Notches provide a rough visual estimate of the uncertainty around the median. Non-overlapping notches suggest a significant difference between the medians of the groups being compared.
+
+##for people classified as bad credit risk the median is closer to the lower end,
+##suggesting left skewness(negative skew) for people with good credit risk the data is
+##roughly symmetric.
+
+# histogram to check the distribution of some numerical variables
+```{r}
+# Load the required packages
+library(ggplot2)
+# Create histograms for age, credit_amount, and duration
+hist_age <- hist(dataset$age, main = "Histogram of Age", xlab = "Age", col = "lightblue")
+hist_credit_amount <- hist(dataset$credit_amount, main = "Histogram of Credit Amount", xlab = "Credit Amount", col = "lightblue")
+hist_duration <- hist(dataset$duration, main = "Histogram of Duration", xlab = "Duration", col = "lightblue")
+
+# Set up the layout for side-by-side histograms
+par(mfrow = c(1, 3))
+
+# Plot the histograms side by side
+plot(hist_age, col = "lightblue", main = "Histogram of Age", xlab = "Age")
+plot(hist_credit_amount, col = "lightblue", main = "Histogram of Credit Amount", xlab = "Credit Amount")
+plot(hist_duration, col = "lightblue", main = "Histogram of Duration", xlab = "Duration")
+
+```
+##creating scatter plot 
+```{r}
+# Create a scatter plot for Age vs Credit Amount
+ggplot(dataset_2, aes(x = age, y = credit_amount)) +
+  geom_point(color = "blue") +
+  labs(title = "Scatter Plot: Age vs Credit Amount", x = "Age", y = "Credit Amount") +
+  theme_minimal()
+# Create a scatter plot for Age vs Credit Amount
+ggplot(dataset_2, aes(x = duration, y = credit_amount)) +
+  geom_point(color = "blue") +
+  labs(title = "Scatter Plot: duration vs Credit Amount", x = "duration", y = "Credit Amount") +
+  theme_minimal()
+# Create a scatter plot for Age vs duration
+ggplot(dataset_2, aes(x = age, y = duration)) +
+  geom_point(color = "blue") +
+  labs(title = "Scatter Plot: Age vs duration", x = "Age", y = "duration") +
+  theme_minimal()
+
+```
+##the data points appear random and do not follow a clear trend or pattern. The points are scattered across the plot without a discernible direction or relationship. The variables are not correlated, and changes in age  do not correspond to changes in the credit_amount.
+
+# transforming categorical variables
+```{r}
+library(caret)
+```
+## selecting categorical variables to code
+```{r}
+categorical_vars <- c("account_status", "credit_history", "purpose", "savings", "employment", "gender_and_marital_status","guarantors", "property", "other_installments", "housing_type", "occupation", "phone", "foreign_worker")
+```
+
+```{r}
+#technique called "one-hot encoding" or "dummy variable encoding" was used. This process converts #categorical variables into binary columns representing the presence or absence of each #category.
+##dummyVars() function was used to  create a model formula for one-hot encoding based on the ##specified categorical variables
+encoded_data <- dummyVars(" ~ .", data= dataset[, categorical_vars], fullRank = TRUE)
+encoded_data <- predict(encoded_data, newdata = dataset[, categorical_vars])
+```
+
+```{r}
+summary(encoded_data)
+```
+##merging the encoded_dataset to other variables
+```{r}
+columns_to_drop <- c("account_status", "credit_history", "purpose", "savings", "employment", "gender_and_marital_status","guarantors", "property", "other_installments", "housing_type", "occupation", "phone", "foreign_worker","Account_status_2","employment_2","credit_risk_2")
+
+newdata <- dataset_2[, !(names(dataset_2) %in% columns_to_drop)]
+```
+
+```{r}
+combined_data <- cbind(encoded_data, newdata)
+
+```
+
+#splitting the data into training and test dataset
+##training and test set
+```{r}
+library(caTools)
+set.seed(42)
+```
+##logistic regression to show relationship between outcome variable and predictors
+
+```{r}
+# Load the MASS library
+library(MASS)
+#AIC  provides a balance between the goodness of fit of the model and its complexity
+# stepwise variable selection  was employed using the stepAIC()
+# Perform stepwise variable selection
+model <- stepAIC(glm(credit_risk ~ ., data = combined_data, family = binomial), direction = "both")
+summary(model)
+```
+
+##splitting the dataset into training and test sets using the createDataPartition() function from the "caret" package.
+```{r}
+#The train_data contains 80% of the data, as specified by the createDataPartition() #function, while the test_data contains the remaining 20% of the data.
+train_indices <- createDataPartition(combined_data$credit_risk, p = 0.8, list = FALSE)
+train_data <- combined_data[train_indices, ]
+test_data <- combined_data[-train_indices,]
+```
+
+##Isolate y variable
+```{r}
+train.y<-train_data$credit_risk
+test.y<-test_data$credit_risk
+```
+
+##Isolate x variable
+```{r}
+train.x<-as.matrix(train_data[1:49])
+test.x<-as.matrix(test_data[1:49])
+```
+##using logistic regression as a baseline modelto set a benchmark for performance. This will serve as a reference point for evaluating the performance of other models use.
+```{r}
+model1 <- glm(formula = credit_risk ~ ., data = train_data, family = binomial)
+```
+
+```{r}
+predictions <- predict(model1, newdata = test_data, type = "response")
+
+```
+
+```{r}
+# Convert predicted probabilities to class labels using a decision threshold of 0.5
+predicted_labels <- ifelse(predictions >= 0.5, 1, 0)
+confusionMatrix(table(predicted_labels,test.y))
+# Calculate evaluation metrics
+accuracy <- mean(predicted_labels == test_data)
+precision <- sum(predicted_labels == 1 & test_data == 1) / sum(predicted_labels == 1)
+recall <- sum(predicted_labels == 1 & test_data == 1) / sum(test_data == 1)
+f1_score <- 2 * (precision * recall) / (precision + recall)
+```
+
+```{r}
+#install.packages("xgboost")
+library(xgboost)
+```
+
+##state parameters
+
+```{r}
+#eta is how fast we want the model to learn
+#max_depth is how big our tree should be
+# subsample is the share of observations we want xgboost to have
+# colsample to deal with issue of possible colinearity
+parameters<- list(eta=0.1,
+             max_depth =3,
+             subsample=1,
+             colsample_bytree=1,
+             min_child_weight=1,
+             gamma=0,
+             set.seed =42,
+             eval_metric= "auc",
+             objective="binary:logistic",
+             booster="gbtree")
+```
+
+#run xgboost
+```{r}
+model2 <- xgboost(params = parameters, data = train.x,label = train.y, nrounds = 100)
+
+```
+
+
+```{r}
+#evaluate model
+# decision threshold of 0.5 was applied,if the predicted probability is greater than or equal to 0.5,it is label as the positive class (good credit risk), and if it is less than 0.5, it is  label  as the negative class ( bad credit risk).
+predictions=predict(model2,newdata=test.x)
+predictions=ifelse(predictions>=0.5, 1,0)
+```
+
+#check accuracy
+```{r}
+confusionMatrix(table(predictions,test.y))
+```
+##0.50 percent sensitivity in detecting people with good credit risk
+##0.8403 percent sensitivity in detecting people with bad credit risk
+
+##Logistic regression as an accuracy of 0.3602 while xgboost has an accuracy of 0.745
+##Xgboost is more accurate in predicting credit risk
+
+
+##looking for most important drivers
+```{r}
+xgb.plot.shap(data=test.x,
+              model = model,
+              top_n = 5)
+```
+
+##calculating Calculate True Positive (TP), False Positive (FP), False Negative (FN)
+```{r}
+TP <- sum(predictions == 1 & test_data == 1)
+FP <- sum(predictions == 1 & test_data == 0)
+FN <- sum(predictions == 0 & test_data == 1)
+
+```
+
+## Calculating Precision and Recall
+```{r}
+accuracy2<- sum(predictions == test_data) / length(test_data)
+precision2 <- TP / (TP + FP)
+recall2 <- TP / (TP + FN)
+```
+##calculating F1
+```{r}
+F1 <- 2 * (precision2 * recall2) / (precision2 + recall2)
+
+```
